@@ -17,6 +17,12 @@ II. [NotebookLM](https://notebook.google.com/notebook/bca85061-a2f6-47d6-8f1b-7a
 | Week 2 | [prog2100_wk2/concepts.cpp](prog2100_wk2/concepts.cpp) | Core C++ concepts |
 | Week 2 | [prog2100_wk2/valid.cpp](prog2100_wk2/valid.cpp) | Input validation (name, age, regex) |
 | Week 2 | [prog2100_wk2/regex_cadpostal.cpp](prog2100_wk2/regex_cadpostal.cpp) | Canadian postal code validation using regex |
+| Week 3 | [prog2100_w3/main.cpp](prog2100_w3/main.cpp) | Pointer basics |
+| Week 3 | [prog2100_w3/poem.cpp](prog2100_w3/poem.cpp) | Pointer basics (poem example) |
+| Assignment 1 | [prog2100_assign1/OriginalCPP.cpp](prog2100_assign1/OriginalCPP.cpp) | Original source file to be converted |
+| Assignment 1 | [prog2100_assign1/main.cpp](prog2100_assign1/main.cpp) | C++ to HTML file converter |
+| Assignment 1 | [prog2100_assign1/main_alt.cpp](prog2100_assign1/main_alt.cpp) | Alternate implementation (regex + filesystem) |
+| Data Structures | [prog2100_datastruct/main.cpp](prog2100_datastruct/main.cpp) | Linked list (NumberList) demo |
 
 ## Compiling on macOS
 
