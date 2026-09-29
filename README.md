@@ -19,6 +19,8 @@ II. [NotebookLM](https://notebook.google.com/notebook/bca85061-a2f6-47d6-8f1b-7a
 | Week 2 | [prog2100_wk2/regex_cadpostal.cpp](prog2100_wk2/regex_cadpostal.cpp) | Canadian postal code validation using regex |
 | Week 3 | [prog2100_w3/main.cpp](prog2100_w3/main.cpp) | Pointer basics |
 | Week 3 | [prog2100_w3/poem.cpp](prog2100_w3/poem.cpp) | Pointer basics (poem example) |
+| Week 4 | [prog2100_wk4/exceptions.cpp](prog2100_wk4/exceptions.cpp) | Exceptions demo (standard, divide by zero, programmer-defined) |
+| Week 4 | [prog2100_wk4/exceptions_lab.cpp](prog2100_wk4/exceptions_lab.cpp) | Practice Exceptions Lab (struct exceptions, catch order, rethrow) |
 | Assignment 1 | [prog2100_assign1/OriginalCPP.cpp](prog2100_assign1/OriginalCPP.cpp) | Original source file to be converted |
 | Assignment 1 | [prog2100_assign1/main.cpp](prog2100_assign1/main.cpp) | C++ to HTML file converter |
 | Assignment 1 | [prog2100_assign1/main_alt.cpp](prog2100_assign1/main_alt.cpp) | Alternate implementation (regex + filesystem) |
