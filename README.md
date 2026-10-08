@@ -22,8 +22,8 @@ II. [NotebookLM](https://notebook.google.com/notebook/bca85061-a2f6-47d6-8f1b-7a
 | Week 4 | [prog2100_wk4/exceptions.cpp](prog2100_wk4/exceptions.cpp) | Exceptions demo (standard, divide by zero, programmer-defined) |
 | Week 4 | [prog2100_wk4/exceptions_lab.cpp](prog2100_wk4/exceptions_lab.cpp) | Practice Exceptions Lab (struct exceptions, catch order, rethrow) |
 | Assignment 1 | [prog2100_assign1/OriginalCPP.cpp](prog2100_assign1/OriginalCPP.cpp) | Original source file to be converted |
-| Assignment 1 | [prog2100_assign1/main.cpp](prog2100_assign1/main.cpp) | C++ to HTML file converter |
-| Assignment 1 | [prog2100_assign1/main_alt.cpp](prog2100_assign1/main_alt.cpp) | Alternate implementation (regex + filesystem) |
+| Assignment 1 | [prog2100_assign1/main.cpp](prog2100_assign1/main.cpp) | C++ to HTML file converter (regex path validation) |
+| Assignment 1 | [prog2100_assign1/main_alt.cpp](prog2100_assign1/main_alt.cpp) | Alternate implementation (hand-rolled path validation) |
 | Data Structures | [prog2100_datastruct/main.cpp](prog2100_datastruct/main.cpp) | Linked list (NumberList) demo |
 
 ## Compiling on macOS
