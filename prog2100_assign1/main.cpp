@@ -25,18 +25,19 @@ struct ConversionError
 
 namespace WindowsPath
 {
-    const size_t MAX_FULL_PATH = 260;
+    const size_t MAX_PATH_LENGTH = 260;
     const size_t MAX_NAME_LENGTH = 255;
 
     // Matches a Windows path: optional drive letter and colon, optional leading
-    // backslash, then backslash-separated runs of non-reserved characters.
-    // Demonstrates <regex> for the shape check instead of hand-rolled substring scanning.
-    const regex WINDOWS_PATH_SHAPE(R"(^([A-Za-z]:)?\\?[^<>:"/\\|?*]+(\\[^<>:"/\\|?*]+)*$)");
+    // separator, then runs of non-reserved characters split by \ or / (Windows
+    // accepts both). Demonstrates <regex> for the shape check instead of
+    // hand-rolled substring scanning.
+    const regex WINDOWS_PATH_SHAPE(R"(^([A-Za-z]:)?[\\/]?[^<>:"/\\|?*]+([\\/][^<>:"/\\|?*]+)*$)");
 
-    string fileNameOnly(const string& fullPath)
+    string extractFileName(const string& path)
     {
-        size_t cut = fullPath.find_last_of("\\/");
-        return (cut == string::npos) ? fullPath : fullPath.substr(cut + 1);
+        size_t cut = path.find_last_of("\\/");
+        return (cut == string::npos) ? path : path.substr(cut + 1);
     }
 
     string toUpper(const string& text)
@@ -47,7 +48,8 @@ namespace WindowsPath
         return upper;
     }
 
-    string nameBeforeFirstDot(const string& fileName)
+    // Everything before the first dot, e.g. "CON" for "CON.tar.gz".
+    string baseName(const string& fileName)
     {
         size_t dot = fileName.find('.');
         return (dot == string::npos) ? fileName : fileName.substr(0, dot);
@@ -63,56 +65,77 @@ namespace WindowsPath
         return toUpper(tail) == toUpper(extension);
     }
 
-    bool isReservedDeviceName(const string& fileName)
+    // Windows device names (CON, LPT1, ...) can't be used as a file or folder
+    // name, even with an extension added.
+    bool isDeviceName(const string& fileName)
     {
-        static const vector<string> reserved = {
+        static const vector<string> devices = {
             "CON", "PRN", "AUX", "NUL",
             "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
             "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
         };
-        string base = toUpper(nameBeforeFirstDot(fileName));
-        return find(reserved.begin(), reserved.end(), base) != reserved.end();
+        string base = toUpper(baseName(fileName));
+        return find(devices.begin(), devices.end(), base) != devices.end();
     }
 
-    bool isLegalFileName(const string& fileName)
+    // Applies the Windows naming rules to one file or folder name.
+    bool checkName(const string& name)
     {
-        if (fileName.empty() || fileName.length() > MAX_NAME_LENGTH)
+        if (name.empty() || name.length() > MAX_NAME_LENGTH)
         {
             return false;
         }
-        if (fileName.back() == ' ' || fileName.back() == '.')
+        if (name.back() == ' ' || name.back() == '.')
         {
             return false;
         }
-        if (isReservedDeviceName(fileName))
+        if (isDeviceName(name))
         {
             return false;
         }
         const string illegal = "<>:\"/\\|?*";
-        return fileName.find_first_of(illegal) == string::npos;
+        return name.find_first_of(illegal) == string::npos;
     }
 
-    bool isWellFormedFullPath(const string& fullPath)
+    // Checks the path's overall shape with the regex, then applies the same
+    // naming rules to every folder in it ("." and ".." are allowed).
+    bool checkPath(const string& path)
     {
-        if (fullPath.empty() || fullPath.length() > MAX_FULL_PATH)
+        if (path.empty() || path.length() > MAX_PATH_LENGTH)
         {
             return false;
         }
-        // A forward-slash path (no backslash or colon) is also accepted here so
-        // the program still runs on a Mac during the demo; only reject strings
-        // that *look like* a Windows path but are malformed.
-        bool looksLikeWindowsPath = fullPath.find('\\') != string::npos || fullPath.find(':') != string::npos;
-        if (!looksLikeWindowsPath)
+        if (!regex_match(path, WINDOWS_PATH_SHAPE))
         {
-            return true;
+            return false;
         }
-        return regex_match(fullPath, WINDOWS_PATH_SHAPE);
+
+        // Skip the drive ("c:") and a leading separator, then check each folder.
+        size_t start = (path.length() >= 2 && path[1] == ':') ? 2 : 0;
+        if (start < path.length() && (path[start] == '\\' || path[start] == '/'))
+        {
+            start++;
+        }
+
+        size_t separator = path.find_first_of("\\/", start);
+        while (separator != string::npos)
+        {
+            string folder = path.substr(start, separator - start);
+            if (folder != "." && folder != ".." && !checkName(folder))
+            {
+                return false;
+            }
+            start = separator + 1;
+            separator = path.find_first_of("\\/", start);
+        }
+
+        return true;
     }
 }
 
 // Hand-written counterpart to a library "replace all": walks the source with
 // find() and stitches together the text between matches plus the replacement.
-string replaceEvery(const string& source, const string& findText, const string& replaceWith)
+string replaceText(const string& source, const string& findText, const string& replaceWith)
 {
     if (findText.empty())
     {
@@ -135,12 +158,12 @@ string replaceEvery(const string& source, const string& findText, const string& 
     return output;
 }
 
-string escapeAngleBrackets(const string& sourceLine)
+string escapeHtml(const string& sourceLine)
 {
-    return replaceEvery(replaceEvery(sourceLine, "<", "&lt;"), ">", "&gt;");
+    return replaceText(replaceText(sourceLine, "<", "&lt;"), ">", "&gt;");
 }
 
-void writeHtmlBody(ifstream& sourceStream, ofstream& destStream,
+void writeHtml(ifstream& sourceStream, ofstream& destStream,
                    const string& sourcePath, const string& destinationPath)
 {
     // badbit failures (e.g. disk errors) are raised by the library as ios_base::failure.
@@ -152,7 +175,7 @@ void writeHtmlBody(ifstream& sourceStream, ofstream& destStream,
     string sourceLine;
     while (getline(sourceStream, sourceLine))
     {
-        destStream << escapeAngleBrackets(sourceLine) << "\n";
+        destStream << escapeHtml(sourceLine) << "\n";
         if (destStream.fail())
         {
             throw ConversionError("Could not write to the output file.", destinationPath);
@@ -171,7 +194,7 @@ void writeHtmlBody(ifstream& sourceStream, ofstream& destStream,
     }
 }
 
-string requestValidatedPath(const string& promptText, const string& requiredExtension)
+string requestPath(const string& promptText, const string& requiredExtension)
 {
     string enteredPath;
     bool accepted = false;
@@ -185,21 +208,21 @@ string requestValidatedPath(const string& promptText, const string& requiredExte
             exit(1);
         }
 
-        string justTheName = WindowsPath::fileNameOnly(enteredPath);
+        string justTheName = WindowsPath::extractFileName(enteredPath);
 
         if (!WindowsPath::endsWithExtension(justTheName, requiredExtension))
         {
             cout << "Expected a " << requiredExtension << " file.\n";
             continue;
         }
-        if (!WindowsPath::isLegalFileName(justTheName))
+        if (!WindowsPath::checkName(justTheName))
         {
             cout << "\"" << justTheName << "\" is not a legal Windows filename.\n";
             continue;
         }
-        if (!WindowsPath::isWellFormedFullPath(enteredPath))
+        if (!WindowsPath::checkPath(enteredPath))
         {
-            cout << "\"" << enteredPath << "\" is not a well-formed path.\n";
+            cout << "\"" << enteredPath << "\" is not a valid Windows path (check the drive and folder names).\n";
             continue;
         }
 
@@ -212,7 +235,7 @@ string requestValidatedPath(const string& promptText, const string& requiredExte
 
 // Prompts for a validated path until the stream opens it successfully.
 template <typename Stream>
-string openWithRetry(Stream& stream, const string& promptText, const string& extension,
+string openFile(Stream& stream, const string& promptText, const string& extension,
                      const string& failureMessage)
 {
     string path;
@@ -220,7 +243,7 @@ string openWithRetry(Stream& stream, const string& promptText, const string& ext
 
     do
     {
-        path = requestValidatedPath(promptText, extension);
+        path = requestPath(promptText, extension);
         try
         {
             stream.open(path);
@@ -278,18 +301,18 @@ int main()
     ifstream sourceStream;
     ofstream destStream;
 
-    string sourcePath = openWithRetry(sourceStream,
+    string sourcePath = openFile(sourceStream,
         "Enter path to source .cpp file (e.g. c:\\bobFile.cpp): ", ".cpp",
         "Could not open the source file. Check that it exists and try again.");
 
-    string destinationPath = openWithRetry(destStream,
+    string destinationPath = openFile(destStream,
         "Enter path for output .html file (e.g. c:\\bobFile.html): ", ".html",
         "Could not create the output file. Check that the folder exists and try again.");
 
     bool converted = false;
     try
     {
-        writeHtmlBody(sourceStream, destStream, sourcePath, destinationPath);
+        writeHtml(sourceStream, destStream, sourcePath, destinationPath);
         converted = true;
     }
     catch (const ConversionError& err)          // programmer-defined
