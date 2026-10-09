@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <exception>
 #include <cstdlib>
+#include <cctype>
 
 using namespace std;
 
@@ -79,39 +80,76 @@ namespace WindowsPath
     }
 
     // Applies the Windows naming rules to one file or folder name.
-    bool checkName(const string& name)
+    // On failure, `reason` says which rule was broken.
+    bool checkName(const string& name, string& reason)
     {
-        if (name.empty() || name.length() > MAX_NAME_LENGTH)
+        if (name.empty())
         {
+            reason = "name is empty.";
+            return false;
+        }
+        if (name.length() > MAX_NAME_LENGTH)
+        {
+            reason = "name is longer than " + to_string(MAX_NAME_LENGTH) + " characters.";
             return false;
         }
         if (name.back() == ' ' || name.back() == '.')
         {
+            reason = "name can't end with a space or a period.";
             return false;
         }
         if (isDeviceName(name))
         {
+            reason = "\"" + baseName(name) + "\" is a reserved Windows device name.";
             return false;
         }
+
         const string illegal = "<>:\"/\\|?*";
-        return name.find_first_of(illegal) == string::npos;
+        size_t bad = name.find_first_of(illegal);
+        if (bad != string::npos)
+        {
+            reason = string("character '") + name[bad] + "' is not allowed.";
+            return false;
+        }
+        for (char ch : name)
+        {
+            if (static_cast<unsigned char>(ch) < 32)
+            {
+                reason = "control characters are not allowed.";
+                return false;
+            }
+        }
+        return true;
     }
 
-    // Checks the path's overall shape with the regex, then applies the same
-    // naming rules to every folder in it ("." and ".." are allowed).
-    bool checkPath(const string& path)
+    // Applies the naming rules to every folder in the path ("." and ".." are
+    // allowed), then confirms the overall shape with the regex.
+    // On failure, `reason` says what's wrong.
+    bool checkPath(const string& path, string& reason)
     {
-        if (path.empty() || path.length() > MAX_PATH_LENGTH)
+        if (path.empty())
         {
+            reason = "path is empty.";
             return false;
         }
-        if (!regex_match(path, WINDOWS_PATH_SHAPE))
+        if (path.length() > MAX_PATH_LENGTH)
         {
+            reason = "path is longer than " + to_string(MAX_PATH_LENGTH) + " characters.";
             return false;
         }
 
-        // Skip the drive ("c:") and a leading separator, then check each folder.
-        size_t start = (path.length() >= 2 && path[1] == ':') ? 2 : 0;
+        // Optional drive ("c:"); a colon anywhere else is caught by checkName below.
+        size_t start = 0;
+        if (path.length() >= 2 && path[1] == ':')
+        {
+            if (!isalpha(static_cast<unsigned char>(path[0])))
+            {
+                reason = "drive must be a single letter followed by a colon (e.g. c:).";
+                return false;
+            }
+            start = 2;
+        }
+        // A leading separator (root of the drive) is allowed.
         if (start < path.length() && (path[start] == '\\' || path[start] == '/'))
         {
             start++;
@@ -121,14 +159,27 @@ namespace WindowsPath
         while (separator != string::npos)
         {
             string folder = path.substr(start, separator - start);
-            if (folder != "." && folder != ".." && !checkName(folder))
+            if (folder.empty())
             {
+                reason = "path contains an empty folder name (doubled separator).";
+                return false;
+            }
+            string folderReason;
+            if (folder != "." && folder != ".." && !checkName(folder, folderReason))
+            {
+                reason = "folder \"" + folder + "\": " + folderReason;
                 return false;
             }
             start = separator + 1;
             separator = path.find_first_of("\\/", start);
         }
 
+        // Final shape check; the specific checks above should catch problems first.
+        if (!regex_match(path, WINDOWS_PATH_SHAPE))
+        {
+            reason = "path is not in the form drive:\\folder\\file.";
+            return false;
+        }
         return true;
     }
 }
@@ -209,20 +260,21 @@ string requestPath(const string& promptText, const string& requiredExtension)
         }
 
         string justTheName = WindowsPath::extractFileName(enteredPath);
+        string reason;
 
         if (!WindowsPath::endsWithExtension(justTheName, requiredExtension))
         {
             cout << "Expected a " << requiredExtension << " file.\n";
             continue;
         }
-        if (!WindowsPath::checkName(justTheName))
+        if (!WindowsPath::checkName(justTheName, reason))
         {
-            cout << "\"" << justTheName << "\" is not a legal Windows filename.\n";
+            cout << "\"" << justTheName << "\" is not a legal Windows filename: " << reason << "\n";
             continue;
         }
-        if (!WindowsPath::checkPath(enteredPath))
+        if (!WindowsPath::checkPath(enteredPath, reason))
         {
-            cout << "\"" << enteredPath << "\" is not a valid Windows path (check the drive and folder names).\n";
+            cout << "\"" << enteredPath << "\" is not a valid Windows path: " << reason << "\n";
             continue;
         }
 
