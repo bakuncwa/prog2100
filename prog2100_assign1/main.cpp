@@ -1,8 +1,16 @@
 // PROG2100 Assignment 1 - Conversion
 // Converts a C++ source file into an HTML file that displays identically
 // to the source when viewed in a browser (< and > escaped, wrapped in <PRE>).
-// Uses regex for the path shape check, a namespace for the Windows path rules,
-// and do-while retry loops. Standard C++14 - no <filesystem> needed.
+// The source and output paths are validated against Windows naming rules
+// (even when run on a Mac) and the user is asked again until both are usable.
+//
+// Windows naming rules (reserved characters, device names, trailing space or
+// period, 255-character names) are from:
+//   Microsoft Learn, "Naming Files, Paths, and Namespaces"
+//   https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+// The 260-character path limit (MAX_PATH) is from:
+//   Microsoft Learn, "Maximum Path Length Limitation"
+//   https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
 
 #include <iostream>
 #include <fstream>
@@ -13,6 +21,7 @@
 #include <exception>
 #include <cstdlib>
 #include <cctype>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -215,7 +224,7 @@ string escapeHtml(const string& sourceLine)
 }
 
 void writeHtml(ifstream& sourceStream, ofstream& destStream,
-                   const string& sourcePath, const string& destinationPath)
+               const string& sourcePath, const string& destinationPath)
 {
     // badbit failures (e.g. disk errors) are raised by the library as ios_base::failure.
     // failbit is left off because getline sets it normally at end of file.
@@ -285,10 +294,18 @@ string requestPath(const string& promptText, const string& requiredExtension)
     return enteredPath;
 }
 
+// True if the path names an existing folder. Needed because on macOS an
+// ifstream can "open" a folder without failing (Windows refuses).
+bool isFolder(const string& path)
+{
+    struct stat info;
+    return stat(path.c_str(), &info) == 0 && (info.st_mode & S_IFMT) == S_IFDIR;
+}
+
 // Prompts for a validated path until the stream opens it successfully.
 template <typename Stream>
 string openFile(Stream& stream, const string& promptText, const string& extension,
-                     const string& failureMessage)
+                const string& failureMessage)
 {
     string path;
     bool opened = false;
@@ -298,6 +315,10 @@ string openFile(Stream& stream, const string& promptText, const string& extensio
         path = requestPath(promptText, extension);
         try
         {
+            if (isFolder(path))
+            {
+                throw ConversionError("That path is a folder, not a file.", path);
+            }
             stream.open(path);
             if (stream.fail())
             {
