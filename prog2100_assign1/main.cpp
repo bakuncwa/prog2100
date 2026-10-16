@@ -26,7 +26,7 @@
 using namespace std;
 
 // Programmer-defined exception for any open/read/write/close failure.
-struct ConversionError
+struct ConversionError : public exception //inheritance; inherit from exception class/children class
 {
     string reason;
     string filePath;
@@ -400,7 +400,7 @@ int main()
     {
         cout << "Unexpected error: " << e.what() << "\n";
     }
-    catch (...)                                 // default
+    catch (...)                                 // default -- unreachable
     {
         cout << "Unknown error during conversion.\n";
     }

@@ -1,0 +1,48 @@
+<PRE>
+
+//Demo of passing a 2D array to a function and how to instance a class
+
+
+
+#include &lt;iostream&gt;
+using namespace std;
+
+class MyClass
+{
+public:
+void mod2Darray(int p[][3], int rowSize, int colSize)
+{
+for(int row = 0; row &lt; rowSize; row++) {
+for (int col = 0; col &lt; colSize; col++) {
+p[row][col] += 10;
+}
+}
+}//end method
+};//end class
+
+
+int main() {
+MyClass myClass = MyClass();
+int twoDnumArray[][3]={{1,2,3},{4,5,6},{7,8,9}};
+int rowSize = 3;
+int colSize = 3;
+
+cout &lt;&lt; "2D array before modification" &lt;&lt; endl;
+for(int row=0;row&lt;rowSize;row++){
+for(int col=0;col&lt;colSize;col++){
+cout &lt;&lt; twoDnumArray[row][col];
+}
+}
+
+//call function to do mod here
+myClass.mod2Darray(twoDnumArray,rowSize,colSize);
+
+cout &lt;&lt; "\n2D array after modification" &lt;&lt; endl;
+for(int row=0;row&lt;rowSize;row++){
+for(int col=0;col&lt;colSize;col++){
+cout &lt;&lt; twoDnumArray[row][col];
+}
+}
+return 0;
+}//end main
+</PRE>
