@@ -25,6 +25,19 @@ II. [NotebookLM](https://notebook.google.com/notebook/bca85061-a2f6-47d6-8f1b-7a
 | Assignment 1 | [prog2100_assign1/main.cpp](prog2100_assign1/main.cpp) | C++ to HTML file converter (regex path validation) |
 | Assignment 1 | [prog2100_assign1/TESTING.md](prog2100_assign1/TESTING.md) | Compile, test and zip steps |
 | Data Structures | [prog2100_datastruct/main.cpp](prog2100_datastruct/main.cpp) | Linked list (NumberList) demo |
+| Week 7 | [prog2100_wk7/unit1_charlie_cat.cpp](prog2100_wk7/unit1_charlie_cat.cpp) | M2 U1 - Intro to classes (stack vs heap objects) |
+| Week 7 | [prog2100_wk7/unit1_knight_vs_dragon.cpp](prog2100_wk7/unit1_knight_vs_dragon.cpp) | M2 U1 - Knight vs Dragon (aggregate classes) *Windows only (conio.h)* |
+| Week 7 | [prog2100_wk7/unit2_complex_number.cpp](prog2100_wk7/unit2_complex_number.cpp) | M2 U2 - Operator overloading and friend functions |
+| Week 7 | [prog2100_wk7/unit2_myownmath/](prog2100_wk7/unit2_myownmath/) | M2 U2 - Header/implementation split *Windows only (conio.h)* |
+| Week 7 | [prog2100_wk7/unit2_gcd.cpp](prog2100_wk7/unit2_gcd.cpp) | M2 U2 - Greatest common divisor sample |
+| Week 7 | [prog2100_wk7/unit3_string_rule_of_three.cpp](prog2100_wk7/unit3_string_rule_of_three.cpp) | M2 U3 - Custom String class (rule of three) |
+| Week 7 | [prog2100_wk7/unit3_string_rule_of_five.cpp](prog2100_wk7/unit3_string_rule_of_five.cpp) | M2 U3 - Custom string class (rule of five) *MSVC only (strncpy_s)* |
+| Week 7 | [prog2100_wk7/unit3_pfarray.cpp](prog2100_wk7/unit3_pfarray.cpp) | M2 U3 - Partially filled array (copy constructor, assignment) |
+| Week 7 | [prog2100_wk7/unit3_string_tokenizing.cpp](prog2100_wk7/unit3_string_tokenizing.cpp) | M2 U3 - String tokenizing *Windows only (conio.h)* |
+| Week 8 | [prog2100_wk8/unit4_polyvehicles/](prog2100_wk8/unit4_polyvehicles/) | M2 U4 - Inheritance and polymorphism (Vehicle, Boat, Bicycle) *Windows only (conio.h)* |
+| Week 8 | [prog2100_wk8/unit5_color.cpp](prog2100_wk8/unit5_color.cpp) | M2 U5 - Console colour *Windows only (windows.h)* |
+| Week 8 | [prog2100_wk8/unit5_shuffle_vector.cpp](prog2100_wk8/unit5_shuffle_vector.cpp) | M2 U5 - Shuffle a vector |
+| Week 8 | [prog2100_wk8/unit5_timer.cpp](prog2100_wk8/unit5_timer.cpp) | M2 U5 - Timers (endless tick loop, Ctrl+C to stop) |
 
 ## Compiling on macOS
 
