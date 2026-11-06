@@ -1,3 +1,4 @@
 {
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "cmake.sourceDirectory": "/Users/gyalm/Desktop/prog2100/prog2100_wk8/unit4_polyvehicles"
 }

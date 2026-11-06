@@ -1,0 +1,53 @@
+
+Bob Smith
+12345
+w0123456
+XX
+at
+ZZ
+tr
+
+PROG2100
+maybe
+y
+DBAS1007
+n
+Sue Jones
+W0234567
+ab
+iv
+Amy Lee
+W0345678
+hh
+ak
+WEBD3000
+n
+Amy Chen
+W0456789
+st
+sw
+MATH1000
+y
+Kai Ng
+W0567890
+AB
+EC
+A very long course name that definitely exceeds the small string buffer
+n
+Lee Roy
+W0678901
+HH
+SA
+Mia Tran
+W0789012
+ST
+pi
+COMM1000
+n
+Mia Park
+W0890123
+AT
+ku
+LU
+ENGL1000
+N
