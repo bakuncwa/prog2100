@@ -32,7 +32,9 @@ Kai Ng
 W0567890
 AB
 EC
-A very long course name that definitely exceeds the small string buffer
+Advanced Object Oriented Programming and Data Design
+###
+Data Structures
 n
 Lee Roy
 W0678901

@@ -1,9 +1,5 @@
 # Assignment 2 - Courses: Live Demo Commands
 
-`Student.h` and `Student.cpp` are the class. `main.cpp` is the driver. `demo_input.txt` is a scripted run.
-
-Phases 2-7 are one continuous run, so stay in the program until Phase 7 says otherwise.
-
 ## Phase 1 - Compile
 
 *Spec: the solution implements header files.*
@@ -41,6 +37,8 @@ g++ -std=c++14 -Wall -Wextra main.cpp Student.cpp -o courses
 | School code | `at` | Lists the 14 campuses |
 | Campus code | `tr` | Asks for a course |
 | Course name | *(press Return)* | `Error: Input cannot be empty.` |
+| Course name | `Advanced Object Oriented Programming and Data Design` | `Error: Course name exceeds 50 characters.` |
+| Course name | `###` | `Error: Course name must contain a letter or digit.` |
 | Course name | `PROG2100` | `[add called...]` and `[courseList resized from 0 to 1 by deep copy]` |
 | Add another course? | `maybe` | `Error: Invalid response. Expected Y or N.` |
 | Add another course? | `y` | Asks for a course |
@@ -196,14 +194,3 @@ grep -nE 'vector|<list>' *.h *.cpp
 ```
 
 **Expected:** no output from the last command.
-
----
-
-## Phase 11 - Submit
-
-**Terminal:**
-```bash
-zip prog2100_assign2_w0544360.zip Student.h Student.cpp main.cpp
-```
-
-Upload the zip, then click **Submit**.

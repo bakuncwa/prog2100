@@ -16,6 +16,7 @@ using namespace std;
 namespace
 {
     const char* const COLLEGE = "Nova Scotia Community College";
+    const size_t MAX_COURSE_NAME_LENGTH = 50;
 
     struct Option
     {
@@ -143,11 +144,35 @@ namespace
         return fullName + " (" + id + ") - " + school + ", " + campus + ", " + COLLEGE;
     }
 
+    // Limits length and requires a letter or digit; symbols are otherwise allowed.
+    string readCourseName(const string& prompt)
+    {
+        while (true)
+        {
+            const string course = readRequired(prompt);
+            const bool hasLetterOrDigit = any_of(course.begin(), course.end(),
+                [](unsigned char c) { return isalnum(c) != 0; });
+
+            if (course.size() > MAX_COURSE_NAME_LENGTH)
+            {
+                cout << "Error: Course name exceeds " << MAX_COURSE_NAME_LENGTH << " characters.\n";
+            }
+            else if (!hasLetterOrDigit)
+            {
+                cout << "Error: Course name must contain a letter or digit.\n";
+            }
+            else
+            {
+                return course;
+            }
+        }
+    }
+
     void enterCourses(Student& student)
     {
         do
         {
-            student.add(readRequired("Course name: "));
+            student.add(readCourseName("Course name: "));
         } while (askYesNo("Add another course? (y/n): "));
     }
 
@@ -200,7 +225,7 @@ namespace
 
         heading("7. Change third student; second must not change (deep copy)");
         third.setName(readIdentity("Third student's new"));
-        third.add(readRequired("Course to add to third student only: "));
+        third.add(readCourseName("Course to add to third student only: "));
         cout << third << second;
 
         heading("8. Run again or exit; three destructor calls follow your answer");
