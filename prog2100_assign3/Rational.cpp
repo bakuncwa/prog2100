@@ -15,9 +15,10 @@ namespace
 {
     const char* const RANGE_ERROR = "Error: Value out of range. Use -2147483647 to 2147483647.";
 
-    void identify(const char* constructorName)
+    // Shows that a constructor or overloaded operator ran.
+    void fired(const char* method)
     {
-        cout << "  [" << constructorName << " constructor called]\n";
+        cout << "  [" << method << " fired]\n";
     }
 
     // INT_MIN is excluded so negating a value can never overflow.
@@ -101,18 +102,18 @@ namespace
 
 Rational::Rational() : numerator(0), denominator(1)
 {
-    identify("default");
+    fired("default constructor");
 }
 
 Rational::Rational(int wholeNumber)
 {
-    identify("whole number");
+    fired("whole number constructor");
     set(wholeNumber, 1);
 }
 
 Rational::Rational(int numeratorValue, int denominatorValue)
 {
-    identify("two-argument");
+    fired("two-argument constructor");
     set(numeratorValue, denominatorValue);
 }
 
@@ -121,7 +122,7 @@ Rational::Rational(int numeratorValue, int denominatorValue)
 // Parses in place with no regex and no heap allocation.
 Rational::Rational(const string& text)
 {
-    identify("string");
+    fired("string constructor");
     const char* p = text.c_str();
     const char* const textEnd = p + text.size(); // catches an embedded '\0'
     int top = 0;
@@ -142,6 +143,7 @@ Rational::Rational(const string& text)
 
 Rational& Rational::operator=(const Rational& other)
 {
+    fired("operator=");
     numerator = other.numerator;
     denominator = other.denominator;
     return *this;
@@ -152,6 +154,7 @@ Rational& Rational::operator=(const Rational& other)
 // a/b + c/d = (ad + cb) / bd
 Rational operator+(const Rational& left, const Rational& right)
 {
+    fired("operator+");
     return answer(static_cast<long long>(left.numerator) * right.denominator
                       + static_cast<long long>(right.numerator) * left.denominator,
                   static_cast<long long>(left.denominator) * right.denominator);
@@ -160,6 +163,7 @@ Rational operator+(const Rational& left, const Rational& right)
 // a/b - c/d = (ad - cb) / bd
 Rational operator-(const Rational& left, const Rational& right)
 {
+    fired("operator-");
     return answer(static_cast<long long>(left.numerator) * right.denominator
                       - static_cast<long long>(right.numerator) * left.denominator,
                   static_cast<long long>(left.denominator) * right.denominator);
@@ -168,13 +172,16 @@ Rational operator-(const Rational& left, const Rational& right)
 // a/b * c/d = ac / bd
 Rational operator*(const Rational& left, const Rational& right)
 {
+    fired("operator*");
     return answer(static_cast<long long>(left.numerator) * right.numerator,
                   static_cast<long long>(left.denominator) * right.denominator);
 }
 
-// a/b / c/d = ad / bc, so c cannot be 0 (3/0 is undefined, unlike 0/3).
+// Flip the right side and multiply: a/b / c/d = a/b * d/c = ad / bc.
+// c cannot be 0, because flipping 0/3 would give 3/0.
 Rational operator/(const Rational& left, const Rational& right)
 {
+    fired("operator/");
     if (right.numerator == 0)
     {
         throw domain_error("Error: Division by zero.");
@@ -183,21 +190,25 @@ Rational operator/(const Rational& left, const Rational& right)
                   static_cast<long long>(left.denominator) * right.numerator);
 }
 
-// Denominators are always positive, so a/b < c/d exactly when ad < cb.
+// Denominators are always positive, so a/b < c/d exactly when ad < cb (and > likewise).
 bool operator<(const Rational& left, const Rational& right)
 {
+    fired("operator<");
     return static_cast<long long>(left.numerator) * right.denominator
          < static_cast<long long>(right.numerator) * left.denominator;
 }
 
 bool operator>(const Rational& left, const Rational& right)
 {
-    return right < left;
+    fired("operator>");
+    return static_cast<long long>(left.numerator) * right.denominator
+         > static_cast<long long>(right.numerator) * left.denominator;
 }
 
 // Both sides are in lowest terms, so equal values (2/4 and 1/2) have identical members.
 bool operator==(const Rational& left, const Rational& right)
 {
+    fired("operator==");
     return left.numerator == right.numerator && left.denominator == right.denominator;
 }
 
@@ -206,9 +217,10 @@ string Rational::toString() const
     return to_string(numerator) + '/' + to_string(denominator);
 }
 
+// The trace goes after the value so the driver's result rows stay on one line.
 ostream& operator<<(ostream& out, const Rational& value)
 {
-    return out << value.toString();
+    return out << value.toString() << "  [operator<< fired]";
 }
 
 void Rational::set(long long newNumerator, long long newDenominator)

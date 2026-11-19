@@ -5,6 +5,7 @@
 #include "Rational.h"
 
 #include <exception>
+#include <initializer_list>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
@@ -80,15 +81,22 @@ namespace
         return cout << "  " << left << setw(LABEL_WIDTH) << label << "= ";
     }
 
-    // Prints the answer, or the error if the operation throws
-    // (division by zero, zero denominator, or an answer outside int range).
-    template <typename Operation>
-    void showResult(const string& label, Operation operation)
+    // Runs result = first <op> second, then cout << result. Division by zero or an
+    // answer outside int range prints the error instead.
+    void showArithmetic(char op, const Rational& first, const Rational& second,
+                        const string& a, const string& b, Rational& result)
     {
+        const string label = a + ' ' + op + ' ' + b;
         try
         {
-            const Rational answer = operation();
-            row(label) << answer << '\n';
+            switch (op)
+            {
+            case '+': result = first + second; break;
+            case '-': result = first - second; break;
+            case '*': result = first * second; break;
+            default:  result = first / second; break;
+            }
+            row(label) << result << '\n';
         }
         catch (const logic_error& error)
         {
@@ -96,6 +104,8 @@ namespace
         }
     }
 
+    // Each operation runs on its own line before its row is printed,
+    // so every "fired" message appears above the row it belongs to.
     void runCalculation()
     {
         heading("Enter two rational numbers");
@@ -108,33 +118,49 @@ namespace
         row(b) << second << '\n';
 
         heading("Arithmetic");
-        showResult(a + " + " + b, [&] { return first + second; });
-        showResult(a + " - " + b, [&] { return first - second; });
-        showResult(a + " * " + b, [&] { return first * second; });
-        showResult(a + " / " + b, [&] { return first / second; });
+        Rational result;
+        for (const char op : {'+', '-', '*', '/'})
+        {
+            showArithmetic(op, first, second, a, b, result);
+        }
 
         heading("Comparisons");
-        row(a + " < " + b) << (first < second) << '\n';
-        row(a + " > " + b) << (first > second) << '\n';
-        row(a + " == " + b) << (first == second) << '\n';
+        const bool isLess = first < second;
+        row(a + " < " + b) << isLess << '\n';
+        const bool isGreater = first > second;
+        row(a + " > " + b) << isGreater << '\n';
+        const bool isEqual = first == second;
+        row(a + " == " + b) << isEqual << '\n';
 
         heading("Other constructors and operators");
-        // Each object is built on its own line so its constructor message prints above its row.
         const Rational zero;
         row("Rational()") << zero << '\n';
         const Rational five(5);
         row("Rational(5)") << five << '\n';
         const Rational unreduced(4, -8);
         row("Rational(4, -8)") << unreduced << '\n';
-        showResult("Rational(1, 0)", [] { return Rational(1, 0); });
+        try
+        {
+            result = Rational(1, 0);
+        }
+        catch (const logic_error& error)
+        {
+            row("Rational(1, 0)") << error.what() << '\n';
+        }
 
-        Rational assigned; // 0/1 until the assignment below
-        assigned = first;
-        row("assigned = " + a) << assigned << '\n';
+        result = first;
+        row("result = " + a) << result << '\n';
         row(a + ".toString()") << first.toString() << '\n';
 
-        // 2 is converted to Rational(2) by the whole number constructor.
-        showResult("2 + " + a, [&] { return 2 + first; });
+        try
+        {
+            result = 2 + first; // 2 becomes Rational(2) through the whole number constructor
+            row("2 + " + a) << result << '\n';
+        }
+        catch (const logic_error& error)
+        {
+            row("2 + " + a) << error.what() << '\n';
+        }
     }
 }
 

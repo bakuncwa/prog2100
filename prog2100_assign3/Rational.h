@@ -11,7 +11,7 @@
 class Rational
 {
 public:
-    // Each constructor prints a line identifying itself.
+    // Every constructor and overloaded operator prints a line showing it fired.
     // Invalid values throw std::invalid_argument (zero denominator, bad text)
     // or std::out_of_range (a part outside -2147483647..2147483647).
     Rational();                                         // 0/1

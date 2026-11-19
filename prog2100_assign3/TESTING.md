@@ -43,27 +43,39 @@ g++ -std=c++14 -Wall -Wextra main.cpp Rational.cpp -o rational
 
 ## Phase 3 - Normalization, math and logical operators
 
-*Spec: answers are a single normalized fraction (1/2, not 2/4). <, > and == return a Boolean. +, -, *, / and = work with Rational objects.*
+*Spec: answers are a single normalized fraction (1/2, not 2/4). <, > and == return a Boolean. The driver uses the operators on Rational objects (result = first + second, cout << result), and each one prints that it fired.*
 
 **Expected (automatic)** for `1/2` and `2/4`:
 ```
 === Values as stored (normalized) ===
-  1/2                           = 1/2
-  2/4                           = 1/2
+  1/2                           = 1/2  [operator<< fired]
+  2/4                           = 1/2  [operator<< fired]
 
 === Arithmetic ===
-  [two-argument constructor called]
-  1/2 + 2/4                     = 1/1
-  [two-argument constructor called]
-  1/2 - 2/4                     = 0/1
-  [two-argument constructor called]
-  1/2 * 2/4                     = 1/4
-  [two-argument constructor called]
-  1/2 / 2/4                     = 1/1
+  [default constructor fired]
+  [operator+ fired]
+  [two-argument constructor fired]
+  [operator= fired]
+  1/2 + 2/4                     = 1/1  [operator<< fired]
+  [operator- fired]
+  [two-argument constructor fired]
+  [operator= fired]
+  1/2 - 2/4                     = 0/1  [operator<< fired]
+  [operator* fired]
+  [two-argument constructor fired]
+  [operator= fired]
+  1/2 * 2/4                     = 1/4  [operator<< fired]
+  [operator/ fired]
+  [two-argument constructor fired]
+  [operator= fired]
+  1/2 / 2/4                     = 1/1  [operator<< fired]
 
 === Comparisons ===
+  [operator< fired]
   1/2 < 2/4                     = false
+  [operator> fired]
   1/2 > 2/4                     = false
+  [operator== fired]
   1/2 == 2/4                    = true
 ```
 
@@ -71,28 +83,30 @@ g++ -std=c++14 -Wall -Wextra main.cpp Rational.cpp -o rational
 
 ## Phase 4 - Other constructors, = and <<
 
-*Spec: the default constructor gives 0/1, the whole number constructor gives whole/1, and the two-argument constructor sets any legitimate value. Each constructor identifies itself with cout. Values print with toString() and cout << RNObj.*
+*Spec: the default constructor gives 0/1, the whole number constructor gives whole/1, and the two-argument constructor sets any legitimate value. Each constructor prints that it fired. Values print with toString() and cout << RNObj.*
 
 **Expected (automatic):**
 ```
 === Other constructors and operators ===
-  [default constructor called]
-  Rational()                    = 0/1
-  [whole number constructor called]
-  Rational(5)                   = 5/1
-  [two-argument constructor called]
-  Rational(4, -8)               = -1/2
-  [two-argument constructor called]
+  [default constructor fired]
+  Rational()                    = 0/1  [operator<< fired]
+  [whole number constructor fired]
+  Rational(5)                   = 5/1  [operator<< fired]
+  [two-argument constructor fired]
+  Rational(4, -8)               = -1/2  [operator<< fired]
+  [two-argument constructor fired]
   Rational(1, 0)                = Error: Denominator cannot be zero.
-  [default constructor called]
-  assigned = 1/2                = 1/2
+  [operator= fired]
+  result = 1/2                  = 1/2  [operator<< fired]
   1/2.toString()                = 1/2
-  [whole number constructor called]
-  [two-argument constructor called]
-  2 + 1/2                       = 5/2
+  [whole number constructor fired]
+  [operator+ fired]
+  [two-argument constructor fired]
+  [operator= fired]
+  2 + 1/2                       = 5/2  [operator<< fired]
 ```
 
-`2 + 1/2` shows two constructor messages: the whole number constructor converts the `2` to `2/1`, then the two-argument constructor builds the answer. Each typed number shows `[string constructor called]`.
+Each arithmetic row shows the chain that produced it: the operator, the two-argument constructor that builds the normalized answer, `operator=` storing it in `result`, then `operator<<`. `2 + 1/2` also starts with the whole number constructor converting the `2` to `2/1`. Each typed number shows `[string constructor fired]`.
 
 ---
 
@@ -188,7 +202,12 @@ sed -n '/^void Rational::set/,/^}/p' Rational.cpp
 sed -n '/^string Rational::toString/,/^}/p; /^ostream& operator<</,/^}/p' Rational.cpp
 ```
 
-**Terminal** - every constructor identifies itself:
+**Terminal** - every constructor and overload prints that it fired:
 ```bash
-grep -n 'identify(' Rational.cpp
+grep -n 'fired' Rational.cpp
+```
+
+**Terminal** - the operators used directly on Rational objects:
+```bash
+grep -n 'result = ' main.cpp
 ```
