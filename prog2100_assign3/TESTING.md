@@ -14,105 +14,111 @@ g++ -std=c++14 -Wall -Wextra main.cpp Rational.cpp -o rational
 
 ---
 
-## Phase 2 - Validation and the string constructor
+## Phase 2 - Constructor demonstrations
 
-*Spec: the string constructor accepts "-1/3" or a whole number such as 5. Tests meant to make the program malfunction must fail safely.*
+*Spec: the default constructor gives 0/1, the one-argument constructor gives whole/1, and the two-argument constructor sets any legitimate value. Each constructor and overload prints that it fired. Values print with cout << RNObj.*
 
 **Terminal:**
 ```bash
 ./rational
 ```
 
-**Program** - one line at a time:
+**Expected first (automatic, runs once):**
+```
+Rational Number Calculator
+Enter fractions such as -1/2 or 3/-4, or whole numbers such as 5.
+Decimals and other characters are not accepted.
+
+=== Constructor demonstrations ===
+  [default constructor fired]
+  Rational()                      = 0/1  [operator<< fired]
+  [whole number constructor fired]
+  Rational(5)                     = 5/1  [operator<< fired]
+  [two-argument constructor fired]
+  Rational(4, -8)                 = -1/2  [operator<< fired]
+  Rational(4, -8).toString()      = -1/2
+  [two-argument constructor fired]
+  Rational(1, 0)                  = Error: Denominator cannot be zero.
+```
+
+---
+
+## Phase 3 - Validation and the string constructor
+
+*Spec: the user enters each whole fraction (or whole number) as a string, "-1/2" or "5". Decimals and non-numeric entries are rejected.*
+
+**Program** - one line at a time. Every entry shows `[string constructor fired]` first:
 
 | Prompt | Type | Expected reply |
 |---|---|---|
-| First number | *(press Return)* | `Error: Input cannot be empty.` |
-| First number | `1.5` | `Error: Invalid number. Expected a fraction (-1/2) or a whole number (5).` |
-| First number | `abc` | Same invalid number error |
-| First number | `1/2/3` | Same invalid number error |
-| First number | `- 1/2` | Same invalid number error (space after the sign) |
-| First number | `1/` | Same invalid number error |
-| First number | `1/0` | `Error: Denominator cannot be zero.` |
-| First number | `99999999999999999999` | `Error: Value out of range. Use -2147483647 to 2147483647.` |
-| First number | `-2147483648` | Same out of range error |
-| First number | `1/2` | Asks for the second number |
-| Second number | `2/4` | Shows the results |
+| First fraction or whole number | *(press Return)* | `Error: Input cannot be empty.` |
+| First fraction or whole number | `1.5` | `Error: Invalid number. Expected a fraction (-1/2) or a whole number (5).` |
+| First fraction or whole number | `abc` | Same invalid number error |
+| First fraction or whole number | `1/2/3` | Same invalid number error |
+| First fraction or whole number | `- 1/2` | Same invalid number error (space after the sign) |
+| First fraction or whole number | `1/` | Same invalid number error |
+| First fraction or whole number | `1/0` | `Error: Denominator cannot be zero.` |
+| First fraction or whole number | `99999999999999999999` | `Error: Value out of range. Use -2147483647 to 2147483647.` |
+| First fraction or whole number | `-2147483648` | Same out of range error |
+| First fraction or whole number | `1/2` | Asks for the second number |
+| Second fraction or whole number | `2/4` | Shows the results |
 
 ---
 
-## Phase 3 - Normalization, math and logical operators
+## Phase 4 - Every operator, one after the other
 
-*Spec: answers are a single normalized fraction (1/2, not 2/4). <, > and == return a Boolean. The driver uses the operators on Rational objects (result = first + second, cout << result), and each one prints that it fired.*
+*Spec: the driver does not ask for the operator. Answers are a single normalized fraction (1/2, not 2/4). <, > and == return a Boolean. The operators are used on Rational objects (result = first + second, cout << result).*
 
 **Expected (automatic)** for `1/2` and `2/4`:
 ```
-=== Values as stored (normalized) ===
-  1/2                           = 1/2  [operator<< fired]
-  2/4                           = 1/2  [operator<< fired]
+=== Numbers entered ===
+  (1/2)                           = 1/2  [operator<< fired]
+  (2/4)                           = 1/2  [operator<< fired]
 
-=== Arithmetic ===
+=== Arithmetic (answers in lowest terms) ===
   [default constructor fired]
   [operator+ fired]
   [two-argument constructor fired]
   [operator= fired]
-  1/2 + 2/4                     = 1/1  [operator<< fired]
+  (1/2) + (2/4)                   = 1/1  [operator<< fired]
   [operator- fired]
   [two-argument constructor fired]
   [operator= fired]
-  1/2 - 2/4                     = 0/1  [operator<< fired]
+  (1/2) - (2/4)                   = 0/1  [operator<< fired]
   [operator* fired]
   [two-argument constructor fired]
   [operator= fired]
-  1/2 * 2/4                     = 1/4  [operator<< fired]
+  (1/2) * (2/4)                   = 1/4  [operator<< fired]
   [operator/ fired]
   [two-argument constructor fired]
   [operator= fired]
-  1/2 / 2/4                     = 1/1  [operator<< fired]
+  (1/2) / (2/4)                   = 1/1  [operator<< fired]
 
 === Comparisons ===
   [operator< fired]
-  1/2 < 2/4                     = false
+  (1/2) < (2/4)                   = false
   [operator> fired]
-  1/2 > 2/4                     = false
+  (1/2) > (2/4)                   = false
   [operator== fired]
-  1/2 == 2/4                    = true
-```
+  (1/2) == (2/4)                  = true
 
----
-
-## Phase 4 - Other constructors, = and <<
-
-*Spec: the default constructor gives 0/1, the whole number constructor gives whole/1, and the two-argument constructor sets any legitimate value. Each constructor prints that it fired. Values print with toString() and cout << RNObj.*
-
-**Expected (automatic):**
-```
-=== Other constructors and operators ===
-  [default constructor fired]
-  Rational()                    = 0/1  [operator<< fired]
-  [whole number constructor fired]
-  Rational(5)                   = 5/1  [operator<< fired]
-  [two-argument constructor fired]
-  Rational(4, -8)               = -1/2  [operator<< fired]
-  [two-argument constructor fired]
-  Rational(1, 0)                = Error: Denominator cannot be zero.
-  [operator= fired]
-  result = 1/2                  = 1/2  [operator<< fired]
-  1/2.toString()                = 1/2
+=== Whole number with a fraction ===
   [whole number constructor fired]
   [operator+ fired]
   [two-argument constructor fired]
   [operator= fired]
-  2 + 1/2                       = 5/2  [operator<< fired]
+  2 + (1/2)                       = 5/2  [operator<< fired]
+
+Calculate again? (y/n):
 ```
 
-Each arithmetic row shows the chain that produced it: the operator, the two-argument constructor that builds the normalized answer, `operator=` storing it in `result`, then `operator<<`. `2 + 1/2` also starts with the whole number constructor converting the `2` to `2/1`. Each typed number shows `[string constructor fired]`.
+Each arithmetic row shows the chain that produced it: the operator, the two-argument constructor that builds the normalized answer, `operator=` storing it in `result`, then `operator<<`. `2 + (1/2)` also starts with the whole number constructor converting the `2` to `2/1`.
 
 ---
 
 ## Phase 5 - Loop back with negatives
 
-*Spec: negative numbers and a negative denominator are normalized.*
+*Spec: loop after each calculation. The numerator, the denominator, or both may contain a minus sign.*
 
 **Program:**
 
@@ -120,10 +126,10 @@ Each arithmetic row shows the chain that produced it: the operator, the two-argu
 |---|---|---|
 | Calculate again? | `maybe` | `Error: Invalid response. Expected Y or N.` |
 | Calculate again? | `y` | Asks for the first number |
-| First number | `-3/4` | Asks for the second number |
-| Second number | ` 1 / -3 ` | Shows the results |
+| First fraction or whole number | `-3/4` | Asks for the second number |
+| Second fraction or whole number | ` 1 / -3 ` | Shows the results |
 
-**Expected:** `1 / -3` is stored as `-1/3`, then `-13/12`, `-5/12`, `1/4`, `9/4`, and `<` is `true`.
+**Expected:** `(1 / -3)` is shown as `-1/3`, then `-13/12`, `-5/12`, `1/4`, `9/4`, and `<` is `true`.
 
 ---
 
@@ -134,10 +140,10 @@ Each arithmetic row shows the chain that produced it: the operator, the two-argu
 | Prompt | Type |
 |---|---|
 | Calculate again? | `y` |
-| First number | `+6/+8` |
-| Second number | `0` |
+| First fraction or whole number | `+6/+8` |
+| Second fraction or whole number | `0` |
 
-**Expected:** `+6/+8` is stored as `3/4`, `0` is stored as `0/1`, and the division row shows `Error: Division by zero.` The program keeps running.
+**Expected:** `+6/+8` is shown as `3/4`, `0` as `0/1`, and the division row shows `Error: Division by zero.` The program keeps running.
 
 ---
 
@@ -148,10 +154,10 @@ Each arithmetic row shows the chain that produced it: the operator, the two-argu
 | Prompt | Type |
 |---|---|
 | Calculate again? | `y` |
-| First number | `2147483647` |
-| Second number | `2147483647` |
+| First fraction or whole number | `2147483647` |
+| Second fraction or whole number | `2147483647` |
 
-**Expected:** `+` and `*` show `Error: Value out of range. Use -2147483647 to 2147483647.`, while `-` gives `0/1` and `/` gives `1/1`. `2 + 2147483647` shows the same range error.
+**Expected:** `+` and `*` show `Error: Value out of range. Use -2147483647 to 2147483647.`, while `-` gives `0/1` and `/` gives `1/1`. `2 + (2147483647)` shows the same range error.
 
 **Program:**
 ```
@@ -181,7 +187,7 @@ cat -n demo_input.txt
 ./rational < demo_input.txt | grep -c 'Error'
 ```
 
-**Expected:** `19` (9 rejected inputs, 1 bad Y/N answer, 5 `Rational(1, 0)` rows, 1 division by zero, 3 out of range answers).
+**Expected:** `15` (1 `Rational(1, 0)` demonstration, 9 rejected inputs, 1 bad Y/N answer, 1 division by zero, 3 out of range answers).
 
 ---
 

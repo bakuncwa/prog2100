@@ -15,7 +15,7 @@ using namespace std;
 
 namespace
 {
-    const int LABEL_WIDTH = 30;
+    const int LABEL_WIDTH = 32;
 
     // Re-prompts until the entry is not blank, then returns it trimmed.
     string readRequired(const string& prompt)
@@ -104,20 +104,44 @@ namespace
         }
     }
 
+    // Runs once at start-up: the constructors that the calculation loop does not use.
+    void demonstrateConstructors()
+    {
+        heading("Constructor demonstrations");
+        const Rational zero;
+        row("Rational()") << zero << '\n';
+        const Rational five(5);
+        row("Rational(5)") << five << '\n';
+        const Rational unreduced(4, -8);
+        row("Rational(4, -8)") << unreduced << '\n';
+        row("Rational(4, -8).toString()") << unreduced.toString() << '\n';
+        try
+        {
+            const Rational invalid(1, 0);
+        }
+        catch (const logic_error& error)
+        {
+            row("Rational(1, 0)") << error.what() << '\n';
+        }
+    }
+
+    // One calculation: reads two numbers, then runs every operator on them.
     // Each operation runs on its own line before its row is printed,
     // so every "fired" message appears above the row it belongs to.
     void runCalculation()
     {
         heading("Enter two rational numbers");
         string a, b;
-        const Rational first = readRational("First number (e.g. -1/2 or 5): ", a);   // string constructor
-        const Rational second = readRational("Second number (e.g. 3/4 or -2): ", b); // string constructor
+        const Rational first = readRational("First fraction or whole number (e.g. -1/2 or 5): ", a);
+        const Rational second = readRational("Second fraction or whole number (e.g. 3/-4 or -2): ", b);
+        a = '(' + a + ')'; // brackets keep labels such as (1/2) / (3/4) readable
+        b = '(' + b + ')';
 
-        heading("Values as stored (normalized)");
+        heading("Numbers entered");
         row(a) << first << '\n';
         row(b) << second << '\n';
 
-        heading("Arithmetic");
+        heading("Arithmetic (answers in lowest terms)");
         Rational result;
         for (const char op : {'+', '-', '*', '/'})
         {
@@ -132,26 +156,7 @@ namespace
         const bool isEqual = first == second;
         row(a + " == " + b) << isEqual << '\n';
 
-        heading("Other constructors and operators");
-        const Rational zero;
-        row("Rational()") << zero << '\n';
-        const Rational five(5);
-        row("Rational(5)") << five << '\n';
-        const Rational unreduced(4, -8);
-        row("Rational(4, -8)") << unreduced << '\n';
-        try
-        {
-            result = Rational(1, 0);
-        }
-        catch (const logic_error& error)
-        {
-            row("Rational(1, 0)") << error.what() << '\n';
-        }
-
-        result = first;
-        row("result = " + a) << result << '\n';
-        row(a + ".toString()") << first.toString() << '\n';
-
+        heading("Whole number with a fraction");
         try
         {
             result = 2 + first; // 2 becomes Rational(2) through the whole number constructor
@@ -167,10 +172,13 @@ namespace
 int main()
 {
     cout << boolalpha; // comparisons print true/false
-    cout << "Rational Number Calculator\n";
+    cout << "Rational Number Calculator\n"
+         << "Enter fractions such as -1/2 or 3/-4, or whole numbers such as 5.\n"
+         << "Decimals and other characters are not accepted.\n";
 
     try
     {
+        demonstrateConstructors();
         do
         {
             runCalculation();
