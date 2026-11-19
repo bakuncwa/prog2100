@@ -1,5 +1,5 @@
 // PROG2100 Assignment 3 - Rational Number Calculator
-// Rubric: driver. Reads two rational numbers, then demonstrates every
+// Console driver. Reads two rational numbers, then demonstrates every
 // constructor and overloaded operator of the Rational class.
 
 #include "Rational.h"
@@ -52,7 +52,7 @@ namespace
         }
     }
 
-    // Rubric: validation. Re-prompts until the string constructor accepts the entry.
+    // Re-prompts until the string constructor accepts the entry.
     Rational readRational(const string& prompt, string& text)
     {
         while (true)
@@ -119,14 +119,19 @@ namespace
         row(a + " == " + b) << (first == second) << '\n';
 
         heading("Other constructors and operators");
-        row("Rational()") << Rational() << '\n';
-        row("Rational(5)") << Rational(5) << '\n';
-        row("Rational(4, -8)") << Rational(4, -8) << '\n';
+        // Each object is built on its own line so its constructor message prints above its row.
+        const Rational zero;
+        row("Rational()") << zero << '\n';
+        const Rational five(5);
+        row("Rational(5)") << five << '\n';
+        const Rational unreduced(4, -8);
+        row("Rational(4, -8)") << unreduced << '\n';
         showResult("Rational(1, 0)", [] { return Rational(1, 0); });
 
         Rational assigned; // 0/1 until the assignment below
         assigned = first;
         row("assigned = " + a) << assigned << '\n';
+        row(a + ".toString()") << first.toString() << '\n';
 
         // 2 is converted to Rational(2) by the whole number constructor.
         showResult("2 + " + a, [&] { return 2 + first; });

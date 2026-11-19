@@ -52,9 +52,13 @@ g++ -std=c++14 -Wall -Wextra main.cpp Rational.cpp -o rational
   2/4                           = 1/2
 
 === Arithmetic ===
+  [two-argument constructor called]
   1/2 + 2/4                     = 1/1
+  [two-argument constructor called]
   1/2 - 2/4                     = 0/1
+  [two-argument constructor called]
   1/2 * 2/4                     = 1/4
+  [two-argument constructor called]
   1/2 / 2/4                     = 1/1
 
 === Comparisons ===
@@ -67,20 +71,28 @@ g++ -std=c++14 -Wall -Wextra main.cpp Rational.cpp -o rational
 
 ## Phase 4 - Other constructors, = and <<
 
-*Spec: the default constructor gives 0/1, the whole number constructor gives whole/1, and the two-argument constructor sets any legitimate value. Every value prints with cout << RNObj.*
+*Spec: the default constructor gives 0/1, the whole number constructor gives whole/1, and the two-argument constructor sets any legitimate value. Each constructor identifies itself with cout. Values print with toString() and cout << RNObj.*
 
 **Expected (automatic):**
 ```
 === Other constructors and operators ===
+  [default constructor called]
   Rational()                    = 0/1
+  [whole number constructor called]
   Rational(5)                   = 5/1
+  [two-argument constructor called]
   Rational(4, -8)               = -1/2
+  [two-argument constructor called]
   Rational(1, 0)                = Error: Denominator cannot be zero.
+  [default constructor called]
   assigned = 1/2                = 1/2
+  1/2.toString()                = 1/2
+  [whole number constructor called]
+  [two-argument constructor called]
   2 + 1/2                       = 5/2
 ```
 
-`2 + 1/2` works because the whole number constructor converts the `2` to `2/1`.
+`2 + 1/2` shows two constructor messages: the whole number constructor converts the `2` to `2/1`, then the two-argument constructor builds the answer. Each typed number shows `[string constructor called]`.
 
 ---
 
@@ -171,12 +183,12 @@ grep -nE 'ifndef|define|endif|int numerator|int denominator' Rational.h
 sed -n '/^void Rational::set/,/^}/p' Rational.cpp
 ```
 
-**Terminal** - the output operator:
+**Terminal** - toString() and the output operator that uses it:
 ```bash
-sed -n '/^ostream& operator<</,/^}/p' Rational.cpp
+sed -n '/^string Rational::toString/,/^}/p; /^ostream& operator<</,/^}/p' Rational.cpp
 ```
 
-**Terminal** - rubric tags in the header:
+**Terminal** - every constructor identifies itself:
 ```bash
-grep -n 'Rubric' Rational.h
+grep -n 'identify(' Rational.cpp
 ```

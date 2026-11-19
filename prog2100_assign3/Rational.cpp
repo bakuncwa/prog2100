@@ -6,6 +6,7 @@
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 
 using namespace std;
@@ -13,6 +14,11 @@ using namespace std;
 namespace
 {
     const char* const RANGE_ERROR = "Error: Value out of range. Use -2147483647 to 2147483647.";
+
+    void identify(const char* constructorName)
+    {
+        cout << "  [" << constructorName << " constructor called]\n";
+    }
 
     // INT_MIN is excluded so negating a value can never overflow.
     int toInt(long long value)
@@ -34,6 +40,28 @@ namespace
             b = remainder;
         }
         return a < 0 ? -a : a;
+    }
+
+    // Moves the sign to the numerator and reduces to lowest terms, e.g. 4/-8 -> -1/2.
+    // The denominator must not be 0.
+    void reduce(long long& top, long long& bottom)
+    {
+        if (bottom < 0)
+        {
+            top = -top;
+            bottom = -bottom;
+        }
+        const long long divisor = gcd(top, bottom);
+        top /= divisor;
+        bottom /= divisor;
+    }
+
+    // Builds an operator's answer. Reducing first lets answers such as
+    // 4294967294/4294967294 fit in int as 1/1.
+    Rational answer(long long top, long long bottom)
+    {
+        reduce(top, bottom);
+        return Rational(toInt(top), toInt(bottom));
     }
 
     const char* skipSpaces(const char* p)
@@ -73,15 +101,18 @@ namespace
 
 Rational::Rational() : numerator(0), denominator(1)
 {
+    identify("default");
 }
 
 Rational::Rational(int wholeNumber)
 {
+    identify("whole number");
     set(wholeNumber, 1);
 }
 
 Rational::Rational(int numeratorValue, int denominatorValue)
 {
+    identify("two-argument");
     set(numeratorValue, denominatorValue);
 }
 
@@ -90,6 +121,7 @@ Rational::Rational(int numeratorValue, int denominatorValue)
 // Parses in place with no regex and no heap allocation.
 Rational::Rational(const string& text)
 {
+    identify("string");
     const char* p = text.c_str();
     const char* const textEnd = p + text.size(); // catches an embedded '\0'
     int top = 0;
@@ -116,48 +148,39 @@ Rational& Rational::operator=(const Rational& other)
 }
 
 // Members are at most INT_MAX, so every product and sum below fits in long long.
-// set() normalizes and throws std::out_of_range if the answer does not fit in int.
 
 // a/b + c/d = (ad + cb) / bd
 Rational operator+(const Rational& left, const Rational& right)
 {
-    Rational result;
-    result.set(static_cast<long long>(left.numerator) * right.denominator
-                   + static_cast<long long>(right.numerator) * left.denominator,
-               static_cast<long long>(left.denominator) * right.denominator);
-    return result;
+    return answer(static_cast<long long>(left.numerator) * right.denominator
+                      + static_cast<long long>(right.numerator) * left.denominator,
+                  static_cast<long long>(left.denominator) * right.denominator);
 }
 
 // a/b - c/d = (ad - cb) / bd
 Rational operator-(const Rational& left, const Rational& right)
 {
-    Rational result;
-    result.set(static_cast<long long>(left.numerator) * right.denominator
-                   - static_cast<long long>(right.numerator) * left.denominator,
-               static_cast<long long>(left.denominator) * right.denominator);
-    return result;
+    return answer(static_cast<long long>(left.numerator) * right.denominator
+                      - static_cast<long long>(right.numerator) * left.denominator,
+                  static_cast<long long>(left.denominator) * right.denominator);
 }
 
 // a/b * c/d = ac / bd
 Rational operator*(const Rational& left, const Rational& right)
 {
-    Rational result;
-    result.set(static_cast<long long>(left.numerator) * right.numerator,
-               static_cast<long long>(left.denominator) * right.denominator);
-    return result;
+    return answer(static_cast<long long>(left.numerator) * right.numerator,
+                  static_cast<long long>(left.denominator) * right.denominator);
 }
 
-// a/b / c/d = ad / bc, so c cannot be 0.
+// a/b / c/d = ad / bc, so c cannot be 0 (3/0 is undefined, unlike 0/3).
 Rational operator/(const Rational& left, const Rational& right)
 {
     if (right.numerator == 0)
     {
         throw domain_error("Error: Division by zero.");
     }
-    Rational result;
-    result.set(static_cast<long long>(left.numerator) * right.denominator,
-               static_cast<long long>(left.denominator) * right.numerator);
-    return result;
+    return answer(static_cast<long long>(left.numerator) * right.denominator,
+                  static_cast<long long>(left.denominator) * right.numerator);
 }
 
 // Denominators are always positive, so a/b < c/d exactly when ad < cb.
@@ -172,31 +195,30 @@ bool operator>(const Rational& left, const Rational& right)
     return right < left;
 }
 
-// Both sides are in lowest terms, so equal values have identical members.
+// Both sides are in lowest terms, so equal values (2/4 and 1/2) have identical members.
 bool operator==(const Rational& left, const Rational& right)
 {
     return left.numerator == right.numerator && left.denominator == right.denominator;
 }
 
-ostream& operator<<(ostream& out, const Rational& value)
+string Rational::toString() const
 {
-    return out << value.numerator << '/' << value.denominator;
+    return to_string(numerator) + '/' + to_string(denominator);
 }
 
-// Moves the sign to the numerator and reduces to lowest terms, e.g. 4/-8 -> -1/2.
+ostream& operator<<(ostream& out, const Rational& value)
+{
+    return out << value.toString();
+}
+
 void Rational::set(long long newNumerator, long long newDenominator)
 {
     if (newDenominator == 0)
     {
         throw invalid_argument("Error: Denominator cannot be zero.");
     }
-    if (newDenominator < 0)
-    {
-        newNumerator = -newNumerator;
-        newDenominator = -newDenominator;
-    }
-    const long long divisor = gcd(newNumerator, newDenominator);
-    const int reducedDenominator = toInt(newDenominator / divisor); // check both before storing
-    numerator = toInt(newNumerator / divisor);
+    reduce(newNumerator, newDenominator);
+    const int reducedDenominator = toInt(newDenominator); // check both before storing
+    numerator = toInt(newNumerator);
     denominator = reducedDenominator;
 }
