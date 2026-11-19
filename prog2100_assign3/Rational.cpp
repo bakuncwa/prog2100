@@ -3,9 +3,9 @@
 
 #include "Rational.h"
 
+#include <cerrno>
 #include <climits>
-#include <iostream>
-#include <regex>
+#include <cstdlib>
 #include <stdexcept>
 
 using namespace std;
@@ -14,12 +14,7 @@ namespace
 {
     const char* const RANGE_ERROR = "Error: Value out of range. Use -2147483647 to 2147483647.";
 
-    void fired(const char* method)
-    {
-        cout << "  [" << method << " fired]\n";
-    }
-
-    // INT_MIN is excluded so negation and cross-multiplication cannot overflow long long.
+    // INT_MIN is excluded so negating a value can never overflow.
     int toInt(long long value)
     {
         if (value < -INT_MAX || value > INT_MAX)
@@ -40,142 +35,168 @@ namespace
         }
         return a < 0 ? -a : a;
     }
+
+    const char* skipSpaces(const char* p)
+    {
+        while (*p == ' ' || *p == '\t')
+        {
+            ++p;
+        }
+        return p;
+    }
+
+    // Reads one signed whole number at p and moves p past it. Returns false if no digits.
+    // Values too big for long long, or outside int range, throw std::out_of_range.
+    bool readPart(const char*& p, int& value)
+    {
+        p = skipSpaces(p);
+        if (*p != '+' && *p != '-' && (*p < '0' || *p > '9'))
+        {
+            return false; // strtoll would otherwise skip other whitespace such as '\n'
+        }
+        char* end;
+        errno = 0;
+        const long long parsed = strtoll(p, &end, 10);
+        if (end == p)
+        {
+            return false; // a sign with no digits
+        }
+        if (errno == ERANGE)
+        {
+            throw out_of_range(RANGE_ERROR);
+        }
+        value = toInt(parsed);
+        p = skipSpaces(end);
+        return true;
+    }
 }
 
 Rational::Rational() : numerator(0), denominator(1)
 {
-    fired("default constructor");
 }
 
 Rational::Rational(int wholeNumber)
 {
-    fired("whole number constructor");
     set(wholeNumber, 1);
 }
 
 Rational::Rational(int numeratorValue, int denominatorValue)
 {
-    fired("two-argument constructor");
     set(numeratorValue, denominatorValue);
 }
 
-// Accepts an optional sign on either part and spaces around the slash.
-// Decimals, letters and extra slashes fail the pattern.
+// Accepts "a/b" or "a", an optional sign on each part, and spaces around the parts.
+// Decimals, letters, a space after a sign and extra slashes are rejected.
+// Parses in place with no regex and no heap allocation.
 Rational::Rational(const string& text)
 {
-    fired("string constructor");
-    static const regex FRACTION(R"(\s*([+-]?\d+)\s*(?:/\s*([+-]?\d+)\s*)?)");
-    smatch parts;
+    const char* p = text.c_str();
+    const char* const textEnd = p + text.size(); // catches an embedded '\0'
+    int top = 0;
+    int bottom = 1;
 
-    if (!regex_match(text, parts, FRACTION))
+    bool valid = readPart(p, top);
+    if (valid && *p == '/')
+    {
+        ++p;
+        valid = readPart(p, bottom);
+    }
+    if (!valid || p != textEnd)
     {
         throw invalid_argument("Error: Invalid number. Expected a fraction (-1/2) or a whole number (5).");
     }
-
-    try
-    {
-        set(stoll(parts[1].str()), parts[2].matched ? stoll(parts[2].str()) : 1);
-    }
-    catch (const out_of_range&) // also catches stoll overflow on very long digit strings
-    {
-        throw out_of_range(RANGE_ERROR);
-    }
+    set(top, bottom);
 }
 
 Rational& Rational::operator=(const Rational& other)
 {
-    fired("operator=");
     numerator = other.numerator;
     denominator = other.denominator;
     return *this;
 }
 
+// Members are at most INT_MAX, so every product and sum below fits in long long.
+// set() normalizes and throws std::out_of_range if the answer does not fit in int.
+
 // a/b + c/d = (ad + cb) / bd
 Rational operator+(const Rational& left, const Rational& right)
 {
-    fired("operator+");
-    const long long a = left.numerator, b = left.denominator, c = right.numerator, d = right.denominator;
-    return Rational::normalized(a * d + c * b, b * d);
+    Rational result;
+    result.set(static_cast<long long>(left.numerator) * right.denominator
+                   + static_cast<long long>(right.numerator) * left.denominator,
+               static_cast<long long>(left.denominator) * right.denominator);
+    return result;
 }
 
 // a/b - c/d = (ad - cb) / bd
 Rational operator-(const Rational& left, const Rational& right)
 {
-    fired("operator-");
-    const long long a = left.numerator, b = left.denominator, c = right.numerator, d = right.denominator;
-    return Rational::normalized(a * d - c * b, b * d);
+    Rational result;
+    result.set(static_cast<long long>(left.numerator) * right.denominator
+                   - static_cast<long long>(right.numerator) * left.denominator,
+               static_cast<long long>(left.denominator) * right.denominator);
+    return result;
 }
 
 // a/b * c/d = ac / bd
 Rational operator*(const Rational& left, const Rational& right)
 {
-    fired("operator*");
-    const long long a = left.numerator, b = left.denominator, c = right.numerator, d = right.denominator;
-    return Rational::normalized(a * c, b * d);
+    Rational result;
+    result.set(static_cast<long long>(left.numerator) * right.numerator,
+               static_cast<long long>(left.denominator) * right.denominator);
+    return result;
 }
 
-// a/b / c/d = a/b * d/c, so c cannot be 0.
+// a/b / c/d = ad / bc, so c cannot be 0.
 Rational operator/(const Rational& left, const Rational& right)
 {
-    fired("operator/");
     if (right.numerator == 0)
     {
         throw domain_error("Error: Division by zero.");
     }
-    const long long a = left.numerator, b = left.denominator, c = right.numerator, d = right.denominator;
-    return Rational::normalized(a * d, b * c);
+    Rational result;
+    result.set(static_cast<long long>(left.numerator) * right.denominator,
+               static_cast<long long>(left.denominator) * right.numerator);
+    return result;
 }
 
+// Denominators are always positive, so a/b < c/d exactly when ad < cb.
 bool operator<(const Rational& left, const Rational& right)
 {
-    fired("operator<");
-    return left.compare(right) < 0;
+    return static_cast<long long>(left.numerator) * right.denominator
+         < static_cast<long long>(right.numerator) * left.denominator;
 }
 
 bool operator>(const Rational& left, const Rational& right)
 {
-    fired("operator>");
-    return left.compare(right) > 0;
+    return right < left;
 }
 
+// Both sides are in lowest terms, so equal values have identical members.
 bool operator==(const Rational& left, const Rational& right)
 {
-    fired("operator==");
-    return left.compare(right) == 0;
+    return left.numerator == right.numerator && left.denominator == right.denominator;
 }
 
-// Prints the value, then its own trace on the same line so result rows stay intact.
 ostream& operator<<(ostream& out, const Rational& value)
 {
-    return out << value.numerator << '/' << value.denominator << "  [operator<< fired]";
+    return out << value.numerator << '/' << value.denominator;
 }
 
+// Moves the sign to the numerator and reduces to lowest terms, e.g. 4/-8 -> -1/2.
 void Rational::set(long long newNumerator, long long newDenominator)
 {
     if (newDenominator == 0)
     {
         throw invalid_argument("Error: Denominator cannot be zero.");
     }
-    numerator = toInt(newNumerator);
-    denominator = toInt(newDenominator);
-}
-
-// Cross-multiplies; the sign flips when exactly one denominator is negative.
-long long Rational::compare(const Rational& other) const
-{
-    const long long difference = static_cast<long long>(numerator) * other.denominator
-                               - static_cast<long long>(other.numerator) * denominator;
-    return (denominator < 0) == (other.denominator < 0) ? difference : -difference;
-}
-
-// Moves the sign to the numerator and reduces to lowest terms, e.g. 4/-8 -> -1/2.
-Rational Rational::normalized(long long newNumerator, long long newDenominator)
-{
     if (newDenominator < 0)
     {
         newNumerator = -newNumerator;
         newDenominator = -newDenominator;
     }
     const long long divisor = gcd(newNumerator, newDenominator);
-    return Rational(toInt(newNumerator / divisor), toInt(newDenominator / divisor));
+    const int reducedDenominator = toInt(newDenominator / divisor); // check both before storing
+    numerator = toInt(newNumerator / divisor);
+    denominator = reducedDenominator;
 }

@@ -1,11 +1,10 @@
 // PROG2100 Assignment 3 - Rational Number Calculator
-// Console driver: reads two rational numbers, then runs every constructor and
-// overloaded operator of the Rational class. All user input is handled here.
+// Rubric: driver. Reads two rational numbers, then demonstrates every
+// constructor and overloaded operator of the Rational class.
 
 #include "Rational.h"
 
 #include <exception>
-#include <initializer_list>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
@@ -53,7 +52,7 @@ namespace
         }
     }
 
-    // Re-prompts until the string constructor accepts the entry; text keeps it for labels.
+    // Rubric: validation. Re-prompts until the string constructor accepts the entry.
     Rational readRational(const string& prompt, string& text)
     {
         while (true)
@@ -70,7 +69,7 @@ namespace
         }
     }
 
-    void heading(const string& title)
+    void heading(const char* title)
     {
         cout << "\n=== " << title << " ===\n";
     }
@@ -81,75 +80,62 @@ namespace
         return cout << "  " << left << setw(LABEL_WIDTH) << label << "= ";
     }
 
+    // Prints the answer, or the error if the operation throws
+    // (division by zero, zero denominator, or an answer outside int range).
+    template <typename Operation>
+    void showResult(const string& label, Operation operation)
+    {
+        try
+        {
+            const Rational answer = operation();
+            row(label) << answer << '\n';
+        }
+        catch (const logic_error& error)
+        {
+            row(label) << error.what() << '\n';
+        }
+    }
+
     void runCalculation()
     {
         heading("Enter two rational numbers");
-        string firstText, secondText;
-        const Rational first = readRational("First number (e.g. -1/2 or 5): ", firstText);
-        const Rational second = readRational("Second number (e.g. 3/4 or -2): ", secondText);
+        string a, b;
+        const Rational first = readRational("First number (e.g. -1/2 or 5): ", a);   // string constructor
+        const Rational second = readRational("Second number (e.g. 3/4 or -2): ", b); // string constructor
 
-        heading("Arithmetic (answers normalized)");
-        Rational result;
-        for (const char op : {'+', '-', '*', '/'})
-        {
-            const string label = firstText + ' ' + op + ' ' + secondText;
-            try
-            {
-                switch (op)
-                {
-                case '+': result = first + second; break;
-                case '-': result = first - second; break;
-                case '*': result = first * second; break;
-                default:  result = first / second; break;
-                }
-                row(label) << result << '\n';
-            }
-            catch (const logic_error& error) // division by zero or an answer past int range
-            {
-                row(label) << error.what() << '\n';
-            }
-        }
+        heading("Values as stored (normalized)");
+        row(a) << first << '\n';
+        row(b) << second << '\n';
+
+        heading("Arithmetic");
+        showResult(a + " + " + b, [&] { return first + second; });
+        showResult(a + " - " + b, [&] { return first - second; });
+        showResult(a + " * " + b, [&] { return first * second; });
+        showResult(a + " / " + b, [&] { return first / second; });
 
         heading("Comparisons");
-        const bool isLess = first < second;
-        row(firstText + " < " + secondText) << isLess << '\n';
-        const bool isGreater = first > second;
-        row(firstText + " > " + secondText) << isGreater << '\n';
-        const bool isEqual = first == second;
-        row(firstText + " == " + secondText) << isEqual << '\n';
+        row(a + " < " + b) << (first < second) << '\n';
+        row(a + " > " + b) << (first > second) << '\n';
+        row(a + " == " + b) << (first == second) << '\n';
 
-        heading("Other constructors and type conversion");
-        const Rational zero;
-        row("Rational()") << zero << '\n';
-        const Rational five(5);
-        row("Rational(5)") << five << '\n';
-        const Rational unreduced(4, -8);
-        row("Rational(4, -8)") << unreduced << '\n';
-        result = unreduced + zero;
-        row("Rational(4, -8) + Rational()") << result << '\n';
-        try
-        {
-            result = 2 + first; // 2 becomes Rational(2) through the whole number constructor
-            row("2 + " + firstText) << result << '\n';
-        }
-        catch (const logic_error& error)
-        {
-            row("2 + " + firstText) << error.what() << '\n';
-        }
-        try
-        {
-            result = Rational(1, 0);
-        }
-        catch (const logic_error& error)
-        {
-            row("Rational(1, 0)") << error.what() << '\n';
-        }
+        heading("Other constructors and operators");
+        row("Rational()") << Rational() << '\n';
+        row("Rational(5)") << Rational(5) << '\n';
+        row("Rational(4, -8)") << Rational(4, -8) << '\n';
+        showResult("Rational(1, 0)", [] { return Rational(1, 0); });
+
+        Rational assigned; // 0/1 until the assignment below
+        assigned = first;
+        row("assigned = " + a) << assigned << '\n';
+
+        // 2 is converted to Rational(2) by the whole number constructor.
+        showResult("2 + " + a, [&] { return 2 + first; });
     }
 }
 
 int main()
 {
-    cout << boolalpha;
+    cout << boolalpha; // comparisons print true/false
     cout << "Rational Number Calculator\n";
 
     try
